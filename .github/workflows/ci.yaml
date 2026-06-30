@@ -71,7 +71,7 @@ jobs:
         env:
           IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
         run: |
-          yq -i '.image.tag = strenv(IMAGE_TAG)' environments/dev/values.yaml
+          yq -i '.image.tag = strenv(IMAGE_TAG)' apps/argocd-service-demo/dev/values.yaml
 
       - name: Commit and push
         env:
@@ -79,7 +79,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add environments/dev/values.yaml
+          git add apps/argocd-service-demo/dev/values.yaml
           git diff --staged --quiet && echo "No changes to commit" && exit 0
           git commit -m "chore: bump argocd-service-demo to ${IMAGE_TAG}"
           git push
