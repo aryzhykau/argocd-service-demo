@@ -9,8 +9,16 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	kafka "github.com/segmentio/kafka-go"
 )
+
+var messagesConsumed = promauto.NewCounter(prometheus.CounterOpts{
+	Name: "kafka_messages_consumed_total",
+	Help: "Total number of Kafka messages consumed and processed.",
+})
 
 type HealthResponse struct {
 	Status  string `json:"status"`
@@ -82,7 +90,7 @@ func runConsumer() {
 		}
 		log.Printf("Message received: partition=%d offset=%d key=%s",
 			msg.Partition, msg.Offset, string(msg.Key))
-		// Simulate processing time to allow lag to build up
+		messagesConsumed.Inc()
 		time.Sleep(time.Duration(delayMs) * time.Millisecond)
 	}
 }
@@ -98,6 +106,7 @@ func main() {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/healthz", healthHandler)
 	mux.HandleFunc("/", helloHandler)
+	mux.Handle("/metrics", promhttp.Handler())
 
 	log.Printf("Starting server on :%s", port)
 	if err := http.ListenAndServe(":"+port, mux); err != nil {
